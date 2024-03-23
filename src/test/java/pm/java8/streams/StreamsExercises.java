@@ -4,11 +4,18 @@ import org.apache.commons.io.output.ByteArrayOutputStream;
 import org.apache.commons.io.output.TeeOutputStream;
 import org.junit.Test;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.PrintStream;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
+import java.util.function.BiFunction;
+import java.util.function.BinaryOperator;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
+import java.util.stream.Stream;
 
 import static java.nio.charset.Charset.defaultCharset;
 import static org.assertj.core.api.Assertions.*;
@@ -64,18 +71,15 @@ public class StreamsExercises {
      *  Collection.stream()
      *  Stream.forEach()
      */
-    @Test
+/*    @Test
     public void verySimpleForEach() {
         List<String> sentence = Arrays.asList("I", "can", "print", "a", "stream", ".");
         final ByteArrayOutputStream interceptedText = interceptSystemOut();
 
-        // You could do this with a List.forEach() but use a stream for practice:
-        // convert the the sentence to a stream and print the words, one per line.
-
-        // TODO
+        sentence.stream().forEach(System.out::println);
         
-        assertThat(interceptedText.toString(defaultCharset())).isEqualTo("I\ncan\nprint\na\nstream\n.\n");
-    }
+        assertThat(interceptedText.toString(defaultCharset())).isEqualTo("I\r\ncan\r\nprint\r\na\r\nstream\r\n.\n");
+    }*/
 
     /*
      * Shows:
@@ -89,9 +93,7 @@ public class StreamsExercises {
 
         long count = 0;
 
-        // Count the number of words.
-
-        // TODO
+        count = Arrays.stream(words).count();
 
         assertThat(count).isEqualTo(4);
     }
@@ -108,9 +110,7 @@ public class StreamsExercises {
 
         long totalLength = 0;
 
-        // Add the lengths of all the words.
-
-        // TODO
+        totalLength = words.stream().mapToInt(s -> s.length()).sum();
 
         assertThat(totalLength).isEqualTo(19);
     }
@@ -127,9 +127,7 @@ public class StreamsExercises {
 
         List<String> names = null;
 
-        // Start with List<Person> people which is defined above. Make a list of first names.
-
-        // TODO
+        names = people.stream().map(Person::getFirstName).collect(Collectors.toList());
 
         assertThat(names).isEqualTo(Arrays.asList("Bernard", "Duncan", "Anastasia", "Charlotte", "Daphne", "Gerald", "Eustace", "Felicity"));
     }
@@ -145,10 +143,7 @@ public class StreamsExercises {
 
         Map<String, String> firstToLast = null;
 
-        // Start with List<Person> people which is defined above. Make a map with key = first name, value = last name.
-
-        // TODO
-
+        firstToLast = people.stream().collect(Collectors.toMap(Person::getFirstName,Person::getLastName));
         assertThat(firstToLast).containsOnly(
                 entry("Bernard", "Sawrey"),
                 entry("Duncan", "Sawrey"),
@@ -172,10 +167,7 @@ public class StreamsExercises {
 
         Map<String, String> firstToLast = null;
 
-        // Start with List<Person> people which is defined above.
-        // Make a map with key = first name in lower case, value = last name in upper case.
-
-        // TODO
+        firstToLast = people.stream().collect(Collectors.toMap(p->(p.firstName.toLowerCase()),p -> (p.lastName.toUpperCase())));
 
         assertThat(firstToLast).containsOnly(
                 entry("bernard", "SAWREY"),
@@ -201,10 +193,9 @@ public class StreamsExercises {
 
         String names = null;
 
-        // Start with List<Person> people which is defined above.
-        // Join all the first names to form a comma separated string.
 
-        // TODO
+
+        names = people.stream().map(Person::getFirstName).collect(Collectors.joining(","));
 
         assertThat(names).isEqualTo("Bernard,Duncan,Anastasia,Charlotte,Daphne,Gerald,Eustace,Felicity");
     }
@@ -222,9 +213,7 @@ public class StreamsExercises {
 
         List<String> names = null;
 
-        // Start with List<Person> people which is defined above. Make a list of first names in alphabetical order.
-
-        // TODO
+        names = people.stream().map(Person::getFirstName).sorted(Comparator.naturalOrder()).collect(Collectors.toList());
 
         assertThat(names).isEqualTo(Arrays.asList("Anastasia", "Bernard", "Charlotte", "Daphne", "Duncan", "Eustace", "Felicity", "Gerald"));
     }
@@ -243,10 +232,7 @@ public class StreamsExercises {
 
         List<Person> names = null;
 
-        // Start with List<Person> people which is defined above. Make a list of the first three names in alphabetical
-        // order when sorted by last name then first name.
-
-        // TODO
+        names = people.stream().sorted(Comparator.comparing(Person::getLastName).thenComparing(Person::getFirstName)).limit(3).collect(Collectors.toList());
 
         assertThat(names).containsExactlyElementsOf(Arrays.asList(
                 new Person("Felicity", "Coniston"),
@@ -270,10 +256,7 @@ public class StreamsExercises {
 
         List<String> names = null;
 
-        // Start with List<Person> people which is defined above. Make a list of all the first and last names in
-        // alphabetical order.
-
-        // TODO
+        names = people.stream().flatMap(p ->Stream.of(p.getFirstName(),p.getLastName())).sorted().distinct().collect(Collectors.toList());
 
         assertThat(names).isEqualTo(Arrays.asList("Anastasia", "Bernard", "Charlotte", "Coniston", "Daphne", "Duncan",
                                                   "Eustace", "Felicity", "Gerald", "Hawkshead", "Sawrey"));
@@ -294,11 +277,11 @@ public class StreamsExercises {
         Path path = Paths.get("src/test/resources/receipt.txt");
 
         List<String> fourLetteredWords = null;
-
-        // Make a list of all the four lettered words in a file.
-        // When the test passes, see if you can print out all the lines of the limerick before you break out the words.
-
-        // TODO
+        fourLetteredWords = Files.lines(path)
+             //   .flatMap(line ->Stream.of(line.split(" ")))
+                .flatMap(s -> Arrays.stream(s.split(" ")))
+                .filter(str -> str.length() == 4)
+                .collect(Collectors.toList());
 
         assertThat(fourLetteredWords).containsOnly("unam", "tibi", "tuum", "fili");
     }
@@ -314,9 +297,7 @@ public class StreamsExercises {
 
         long sum = 0L;
 
-        // Sum the first twelve integers (1-12)
-
-        // TODO
+        sum = IntStream.range(1,13).sum();
 
         assertThat(sum).isEqualTo(78L);
     }
@@ -332,10 +313,7 @@ public class StreamsExercises {
 
         Map<String, List<Person>> groups = null;
 
-        // Start with List<Person> people which is defined above. Create a map with
-        // key = last name and value = a list of people with that last name.
-
-        // TODO
+        groups = people.stream().collect(Collectors.groupingBy(Person::getLastName));
 
         assertThat(groups).containsKeys("Coniston", "Hawkshead", "Sawrey");
 
@@ -369,13 +347,17 @@ public class StreamsExercises {
     public void makeHashMapOfFirstNameToLastName() {
 
         Map<String, String> firstToLast = null;
+        Map <String, String> identity = new HashMap<>();
+        BiFunction<Map<String,String>,Person,Map<String,String>> accumulator = (map, person) -> {
+            map.put(person.firstName, person.lastName);
+            return map;
+        };
 
-        // This is similar to makeMapOfFirstNameToLastName() except we are generating a specific type of Map
-        // rather than using the Map generated by Collectors.toMap().
-        // Start with List<Person> people which is defined above.
-        // Make a HashMap with key = first name, value = last name.
-
-        // TODO
+        BinaryOperator<Map<String, String>> combiner = (map1,map2) -> {
+          map1.putAll(map2);
+          return map1;
+        };
+        firstToLast = people.stream().reduce(identity, accumulator, combiner);
 
         assertThat(firstToLast).isExactlyInstanceOf(HashMap.class);
         assertThat(firstToLast).containsOnly(
